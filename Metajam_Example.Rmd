@@ -1,0 +1,50 @@
+---
+title: "Metajam Example"
+author: "Desik Somasundaram"
+date: "10/6/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(metajam)
+```
+
+```{r}
+#Remote data repo link
+data_obj <- "https://cn.dataone.org/cn/v2/resolve/urn:uuid:7fc6f6db-c5ea-426a-a743-1f2edafb43b8"
+#Local download path
+path <- "~/Desktop/MEDSProgram/EDS213"
+```
+
+```{r download_data , eval=FALSE}
+data_path <- download_d1_data(data_obj, path)
+```
+
+```{r}
+#Read in data
+house_Lang_data <- read_d1_files(data_path)
+
+hh_data <- house_Lang_data$data
+
+#Subset data to get english speaking pct for time period of interest
+english_only <- hh_data %>% 
+                filter(Year >= 2009) %>% 
+                filter(Year <= 2015) %>% 
+                select(Year, total, speak_only_english) %>% 
+                group_by(Year) %>% 
+                summarize(total= sum(total), speak_eng= sum(speak_only_english)) %>% 
+                mutate(eng_pct = ((speak_eng/ total)*100))
+
+```
+```{r}
+#Plot English Speaking Percentage over Time
+ggplot(english_only) + 
+  geom_point(aes(x = Year, y = eng_pct)) +
+  geom_line(aes(x = Year, y = eng_pct)) +
+  labs(title = "Alaskan Household English Speaking Percentage over Time") +
+  xlab("Year") +
+  ylab("% of English Speaking Households")
+```
+
+

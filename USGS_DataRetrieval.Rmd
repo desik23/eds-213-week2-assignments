@@ -1,0 +1,82 @@
+---
+title: "Assignment 2.1- USGS dataRetrieval"
+author: "Desik Somasundaram"
+date: "10/6/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dataRetrieval)
+library(tidyverse)
+```
+
+```{r}
+# Ventura River near Ventura, CA and Santa Paula Creek:
+siteNumbers <- c("11118500","11113500")
+parameterCd <- "00060"  # Discharge
+startDate <- "2019-10-01"  
+endDate <- "2021-10-05" 
+
+discharge_raw <- readNWISdv(siteNumbers, 
+                    parameterCd, startDate, endDate)
+
+discharge <- renameNWISColumns(discharge_raw)
+
+#Ventura River dataset
+vr_discharge <- filter(discharge, site_no==11118500)
+#Santa Paula Creek dataset
+sp_discharge <- filter(discharge, site_no==11113500)
+
+```
+
+```{r}
+ggplot() + 
+  geom_line(data=vr_discharge, aes(x = Date, y = Flow, color = "Ventura River")) +
+  geom_line(data=sp_discharge, aes(x = Date, y = Flow, color = "Santa Paula Creek"))+
+  labs(title="Daily Streamflow in Santa Paula Creek and Ventura River")+
+  ylab("Flow (cfs)") 
+```
+```{r}
+#siteINFO <- readNWISsite(siteNumber)
+dataAvail <-whatNWISdata(siteNumber = "11118500", service= "dv")
+dataAvail$begin_date
+```
+```{r}
+# Ventura River near Ventura, CA and Santa Paula Creek:
+siteNumbers <- c("11118500","11113500")
+parameterCd <- "00060"  # Discharge
+startDate <- "2021-10-04"  
+endDate <- "2021-10-05" 
+# Query to download instantaneous stream flow data with higher resolution than daily dataset
+discharge_raw_oct21 <- readNWISdata(sites = siteNumbers, 
+                              service = "iv",
+                              parameterCd = parameterCd, 
+                              startDate = startDate, 
+                              endDate =endDate)
+
+discharge_oct21 <- renameNWISColumns(discharge_raw_oct21)
+
+#Ventura River dataset
+vr_discharge_oct21 <- filter(discharge_oct21, site_no==11118500)
+#Santa Paula Creek dataset
+sp_discharge_oct21 <- filter(discharge_oct21, site_no==11113500)
+
+```
+```{r}
+ggplot() + 
+  geom_line(data=vr_discharge_oct21, aes(x = dateTime, y = Flow_Inst, color = "Ventura River")) +
+  geom_line(data=sp_discharge_oct21, aes(x = dateTime, y = Flow_Inst, color = "Santa Paula Creek"))+
+  labs(title="Instantaneous Streamflow in Santa Paula Creek and Ventura River")+
+  ylab("Flow (cfs)") 
+
+#Identifying peak flow in Santa Paula Creek during storm event 10/5
+maxsp_discharge_oct21 <-sp_discharge_oct21 %>% 
+                          slice(which.max(Flow_Inst))
+maxsp_discharge_oct21$dateTime
+#Identifying peak flow in Ventura River during storm event 10/5
+maxvr_discharge_oct21 <-vr_discharge_oct21 %>% 
+                          slice(which.max(Flow_Inst))
+maxvr_discharge_oct21$dateTime
+```
+On 10/5, the Santa Paula Creek gauge shows a peak at 10:30 UTC which is 3:30 am PST while the Ventura River gauge shows a flat line maximum around 7:25 UTC which is approximately 12:25 am PST. 
